@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desligamentos — Rede Subterrânea</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F6F9; --panel:#FFFFFF; --panel2:#EEF2F7;
+    --line:#DCE3EC; --line-soft:#E8EDF3;
+    --text:#1B2430; --text-dim:#57657A; --text-faint:#8B96A6;
+    --primary:#1F5C9E; --primary-dim:#E7F0FA; --primary-line:#A9C8E8;
+    --teal:#0E7A5F; --teal-dim:#E1F3EC; --teal-line:#8FCFB8;
+    --red:#C1272D; --red-dim:#FBE7E7; --red-line:#EFAFAF;
+    --purple:#5B4B8C; --purple-dim:#ECE9F5; --purple-line:#C3B8DE;
+    --warn:#D9790E; --warn-dim:#FCEEDD; --warn-line:#F0C077;
+    --navy:#132E4C;
+    --font:'Inter',sans-serif;
+    --mono-stack:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --shadow:0 1px 2px rgba(20,30,50,.05);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--font);}
+
+  .statusbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:9px 20px;border-bottom:1px solid var(--line);
+    font-size:11px;letter-spacing:.04em;color:var(--text-faint);
+    position:sticky;top:0;background:var(--bg);z-index:6;
+  }
+  .statusbar .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--teal);margin-right:6px;}
+
+  header{padding:20px 20px 16px;}
+  .crumb{font-size:12px;color:var(--text-faint);margin-bottom:8px;letter-spacing:.03em;}
+  .crumb b{color:var(--primary);}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-mark{
+    width:34px;height:34px;border-radius:9px;background:var(--primary);
+    display:flex;align-items:center;justify-content:center;color:#fff;
+    font-weight:700;font-size:17px;flex-shrink:0;
+  }
+  .brand-text h1{font-size:21px;font-weight:700;margin:0;letter-spacing:.1px;color:var(--text);}
+  .brand-text p{font-size:13px;color:var(--text-dim);margin:4px 0 0;}
+
+  main{
+    display:grid;grid-template-columns:1fr 420px;gap:16px;
+    padding:0 20px 40px;align-items:start;
+  }
+  @media (max-width:960px){ main{grid-template-columns:1fr;} }
+
+  .panel{
+    background:var(--panel);padding:22px 24px;border:1px solid var(--line);
+    border-radius:12px;box-shadow:var(--shadow);
+  }
+  .panel-title{
+    font-size:11.5px;font-weight:700;color:var(--text-faint);
+    letter-spacing:.06em;margin:0 0 4px;text-transform:uppercase;
+  }
+  .panel-sub{font-size:12.5px;color:var(--text-dim);margin:0 0 18px;line-height:1.5;}
+
+  .field-row{
+    display:grid;grid-template-columns:230px 1fr;gap:14px;
+    align-items:center;padding:9px 0;border-bottom:1px solid var(--line-soft);
+  }
+  .field-row.stacked{grid-template-columns:1fr;align-items:stretch;}
+  .field-row.stacked label{margin-bottom:6px;}
+  .field-row label{ font-size:13px;color:var(--text-dim);font-weight:500; }
+  .field-row label .opt{color:var(--text-faint);font-size:11px;font-weight:400;}
+  input,select,textarea{
+    width:100%;background:var(--panel);border:1px solid var(--line);
+    border-radius:8px;color:var(--text);padding:9px 11px;
+    font-family:var(--font);font-size:13.5px;
+  }
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary);}
+  textarea{resize:vertical;min-height:64px;font-family:var(--font);}
+
+  .msg-type{ display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px; }
+  .msg-type button{
+    padding:8px 14px;border-radius:999px;border:1px solid var(--line);
+    background:var(--panel);color:var(--text-faint);font-size:12.5px;cursor:pointer;
+    font-family:var(--font);font-weight:500;
+  }
+  .msg-type button:hover:not(.active){border-color:var(--text-faint);}
+  .msg-type button[data-type="inicial"].active{background:var(--primary-dim);border-color:var(--primary-line);color:var(--primary);}
+  .msg-type button[data-type="atualizacao1"].active{background:var(--teal-dim);border-color:var(--teal-line);color:var(--teal);}
+  .msg-type button[data-type="atualizacao2"].active{background:var(--warn-dim);border-color:var(--warn-line);color:var(--warn);}
+  .msg-type button[data-type="religamentoParcial"].active{background:var(--purple-dim);border-color:var(--purple-line);color:var(--purple);}
+
+  .generate-btn{
+    margin-top:22px;width:100%;padding:12px;border:none;border-radius:9px;
+    background:var(--primary);color:#fff;font-weight:700;font-size:13.5px;cursor:pointer;
+    font-family:var(--font);
+  }
+  .generate-btn:hover{background:#194A81;}
+
+  .report-panel{position:sticky;top:48px;}
+  .report-box{
+    background:var(--panel2);border:1px solid var(--line);border-radius:9px;
+    padding:14px;font-family:var(--mono-stack);font-size:12.5px;line-height:1.6;
+    white-space:pre-wrap;min-height:220px;color:var(--text);
+  }
+  .report-box:empty::before{
+    content:"O relatório gerado aparecerá aqui.";
+    color:var(--text-faint);font-family:var(--font);
+  }
+  .report-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .action-btn{
+    flex:1;font-size:12.5px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);
+    background:var(--panel);color:var(--text);cursor:pointer;font-family:var(--font);font-weight:500;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+  }
+  .action-btn:hover{border-color:var(--text-faint);background:var(--panel2);}
+  .action-btn.whatsapp{border-color:var(--teal-line);color:var(--teal);background:var(--teal-dim);}
+  .action-btn.whatsapp:hover{filter:brightness(0.97);}
+
+  .history{margin-top:26px;}
+  .history-item{
+    padding:10px 12px;border:1px solid var(--line);border-left:3px solid var(--primary-line);
+    border-radius:8px;font-size:12.5px;cursor:pointer;margin-bottom:8px;background:var(--panel);
+  }
+  .history-item:hover{border-color:var(--primary-line);background:var(--primary-dim);}
+  .history-top{display:flex;justify-content:space-between;color:var(--text-faint);font-size:11px;margin-bottom:2px;}
+  .history-title{color:var(--text);font-weight:500;}
+  .empty-hist{color:var(--text-faint);font-size:12.5px;padding:8px 2px;line-height:1.5;}
+  .loading-hist{color:var(--text-faint);font-size:12.5px;padding:8px 2px;}
+
+  .image-preview{margin-top:14px;}
+  .image-preview img{width:100%;border-radius:9px;border:1px solid var(--line);display:block;}
+  .image-actions{display:flex;gap:8px;margin-top:10px;}
+
+  /* Cartão de imagem (renderizado fora da tela e capturado via html2canvas) */
+  .img-card{
+    width:680px;background:#FFFFFF;border:1px solid var(--line);border-radius:14px;
+    overflow:hidden;font-family:var(--font);color:var(--text);
+  }
+  .img-topbar{
+    background:var(--navy);padding:22px 28px;
+    border-bottom:3px solid var(--primary);display:flex;align-items:center;gap:14px;
+  }
+  .img-icon{
+    width:42px;height:42px;border-radius:9px;background:var(--primary);flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;font-weight:700;
+  }
+  .img-title h2{margin:0;font-size:18px;font-weight:700;letter-spacing:.2px;color:#fff;}
+  .img-title p{margin:4px 0 0;font-size:12.5px;color:#A9C8E8;font-weight:600;letter-spacing:.03em;}
+  .img-body{padding:24px 28px;}
+  .img-badges{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+  .img-badge{
+    font-size:11.5px;padding:4px 12px;border-radius:20px;font-weight:600;
+    background:var(--purple-dim);color:var(--purple);
+  }
+  .img-row{
+    display:grid;grid-template-columns:200px 1fr;gap:12px;padding:9px 0;
+    border-bottom:1px solid var(--line-soft);font-size:13.5px;
+  }
+  .img-row .lbl{color:var(--text-faint);}
+  .img-row .val{color:var(--text);font-weight:600;}
+  .img-block{
+    margin-top:18px;padding:14px 16px;background:var(--panel2);border-left:3px solid var(--primary);
+    border-radius:8px;font-size:13px;line-height:1.55;
+  }
+  .img-block h4{margin:0 0 6px;font-size:11.5px;color:var(--primary);letter-spacing:.05em;text-transform:uppercase;}
+  .img-footer{
+    padding:14px 28px;border-top:1px solid var(--line);display:flex;justify-content:space-between;
+    font-size:11px;color:var(--text-faint);background:var(--panel2);
+  }
+
+  .toast{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    background:var(--navy);border:1px solid var(--navy);
+    padding:10px 18px;border-radius:9px;font-size:13px;color:#fff;
+    opacity:0;pointer-events:none;transition:opacity .25s ease, transform .25s ease;
+    z-index:50;box-shadow:0 4px 14px rgba(19,46,76,.25);
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+</style>
+</head>
+<body>
+
+<div class="statusbar">
+  <span><span class="dot"></span>Sistema operacional</span>
+  <span id="clock"></span>
+</div>
+
+<header>
+  <div class="crumb">CONSOLE &gt; <b>DESLIGAMENTOS SUBTERRÂNEOS</b></div>
+  <div class="brand">
+    <div class="brand-mark">⚡</div>
+    <div class="brand-text">
+      <h1>Desligamentos — Rede Subterrânea</h1>
+      <p>Preencha os campos e gere o comunicado — histórico compartilhado entre a equipe</p>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="panel">
+    <p class="panel-title">TIPO DE COMUNICADO</p>
+    <div class="msg-type" id="msgType">
+      <button data-type="inicial" class="active">Desligamento inicial</button>
+      <button data-type="atualizacao1">20 minutos após o desligamento</button>
+      <button data-type="atualizacao2">2h após o desligamento</button>
+      <button data-type="religamentoParcial">Religamento parcial (DJ até CD)</button>
+    </div>
+
+    <p class="panel-title">DADOS DO DESLIGAMENTO</p>
+    <p class="panel-sub">Preencha o campo à frente de cada tópico. Campos deixados em branco não entram no relatório.</p>
+
+    <div class="field-row"><label>Situação</label><input id="situacao" placeholder="Ex: 1ª Contingência"></div>
+    <div class="field-row"><label>Data</label><input id="data" type="date"></div>
+    <div class="field-row"><label>Sistema</label><input id="sistema" placeholder="Ex: Reticulado CTR I"></div>
+    <div class="field-row"><label>Circuito</label><input id="circuito" placeholder="Ex: CTR-202"></div>
+    <div class="field-row"><label>Equipamento desligado</label><input id="equipamento" placeholder="Ex: DJ-84 e CD-223 VIA 3"></div>
+    <div class="field-row"><label>Horário do desligamento</label><input id="horaDeslig" type="time"></div>
+    <div class="field-row"><label>Horário do religamento <span class="opt">(se houver)</span></label><input id="horaRelig" type="time"></div>
+    <div class="field-row parcial-only" style="display:none;"><label>Trecho religado</label><input id="trechoReligado" placeholder="Ex: DJ-84 até PI-1244"></div>
+    <div class="field-row parcial-only" style="display:none;"><label>Trecho ainda desligado <span class="opt">(a jusante)</span></label><input id="trechoDesligado" placeholder="Ex: CD-223 VIA 3"></div>
+    <div class="field-row"><label>Ordem de Serviço PO</label><input id="ordemServico" placeholder="Ex: 16507036-1"></div>
+    <div class="field-row"><label>Técnico Subterrâneo Responsável</label><input id="tecSubterraneo" placeholder="Nome"></div>
+    <div class="field-row"><label>Técnico COD Responsável</label><input id="tecCod" placeholder="Nome"></div>
+    <div class="field-row"><label>Proteção atuada <span class="opt">(se houver)</span></label><input id="protecao" placeholder="Ex: 50N Fase Azul"></div>
+    <div class="field-row"><label>Oscilografias solicitadas <span class="opt">(se houver)</span></label><input id="oscilografias" placeholder="Ex: DJ-84 e CD-223"></div>
+    <div class="field-row"><label>OIE <span class="opt">(ou N/A)</span></label><input id="oie" placeholder="Nº OIE ou N/A"></div>
+    <div class="field-row stacked">
+      <label>Estratégia de atendimento <span class="opt">(se houver)</span></label>
+      <textarea id="estrategia" placeholder="Ex: Técnico Luciano e Equipe UNA-501 posicionados no PI-1244 para abertura e testes no sentido da CT-3882"></textarea>
+    </div>
+
+    <button class="generate-btn" id="generateBtn">Gerar relatório</button>
+  </section>
+
+  <section class="panel report-panel">
+    <p class="panel-title">RELATÓRIO</p>
+    <div class="report-box" id="reportBox" contenteditable="false"></div>
+    <div class="report-actions">
+      <button class="action-btn" id="copyBtn">Copiar texto</button>
+      <button class="action-btn whatsapp" id="shareBtn">Compartilhar no WhatsApp</button>
+    </div>
+    <div class="report-actions">
+      <button class="action-btn" id="genImageBtn">Gerar imagem</button>
+    </div>
+    <div class="image-preview" id="imagePreview"></div>
+    <div class="image-actions" id="imageActions" style="display:none;">
+      <button class="action-btn" id="downloadImgBtn">Baixar imagem</button>
+      <button class="action-btn whatsapp" id="shareImgBtn">Copiar imagem para o WhatsApp</button>
+    </div>
+
+    <div class="history">
+      <p class="panel-title">HISTÓRICO COMPARTILHADO</p>
+      <p class="panel-sub" style="margin-bottom:10px;">Salvo numa planilha do Google — visível para todos os técnicos que acessarem esta página.</p>
+      <div id="historyList"><div class="loading-hist">Carregando...</div></div>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<div style="position:fixed;top:-10000px;left:-10000px;">
+  <div class="img-card" id="imageCard">
+    <div class="img-topbar">
+      <div class="img-icon">⚡</div>
+      <div class="img-title">
+        <h2>DESLIGAMENTO CIRCUITO SUBTERRÂNEO</h2>
+        <p id="imgStageLabel">DESLIGAMENTO INICIAL</p>
+      </div>
+    </div>
+    <div class="img-body">
+      <div class="img-badges" id="imgBadges"></div>
+      <div id="imgRows"></div>
+      <div id="imgBlocks"></div>
+    </div>
+    <div class="img-footer">
+      <span id="imgFooterTime"></span>
+      <span>Console de Desligamentos — Rede Subterrânea</span>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+/* ======================================================================
+   CONFIGURAÇÃO OBRIGATÓRIA
+   Cole aqui a URL do seu Apps Script (termina em /exec).
+   Veja instruções no arquivo apps-script-historico.gs
+   ====================================================================== */
+const APPS_SCRIPT_URL = 'COLE_AQUI_A_URL_DO_APPS_SCRIPT';
+// Use o MESMO valor que você colocou em SHARED_SECRET no apps-script-historico.gs
+const SHARED_SECRET = 'troque-esta-chave-por-algo-unico-123';
+
+const typeLabels = {
+  inicial: 'DESLIGAMENTO CIRCUITO SUBTERRÂNEO',
+  atualizacao1: 'DESLIGAMENTO CIRCUITO SUBTERRÂNEO – ATUALIZAÇÃO 1',
+  atualizacao2: 'DESLIGAMENTO CIRCUITO SUBTERRÂNEO – ATUALIZAÇÃO 2',
+  religamentoParcial: 'DESLIGAMENTO CIRCUITO SUBTERRÂNEO – RELIGAMENTO PARCIAL (DJ ATÉ CD)'
+};
+const typeShort = {
+  inicial:'Desligamento inicial', atualizacao1:'20 min após o desligamento',
+  atualizacao2:'2h após o desligamento', religamentoParcial:'Religamento parcial (DJ até CD)'
+};
+
+let selectedMsgType = 'inicial';
+let currentReportText = '';
+
+document.getElementById('data').valueAsDate = new Date();
+
+function tick(){
+  const el = document.getElementById('clock');
+  if(el) el.textContent = new Date().toLocaleTimeString('pt-BR',{hour12:false});
+}
+tick(); setInterval(tick,1000);
+
+document.getElementById('msgType').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  selectedMsgType = btn.dataset.type;
+  [...e.currentTarget.children].forEach(b=>b.classList.toggle('active', b===btn));
+  document.querySelectorAll('.parcial-only').forEach(row=>{
+    row.style.display = selectedMsgType === 'religamentoParcial' ? 'grid' : 'none';
+  });
+});
+
+function showToast(msg, duration){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), duration || 2200);
+}
+
+function fmtDateBR(isoDate){
+  if(!isoDate) return '';
+  const [y,m,d] = isoDate.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function val(id){ return document.getElementById(id).value.trim(); }
+
+function getFieldsData(){
+  return [
+    ['Situação', val('situacao')],
+    ['Data', fmtDateBR(val('data'))],
+    ['Sistema', val('sistema')],
+    ['Circuito', val('circuito')],
+    ['Equipamento desligado', val('equipamento')],
+    ['Horário do desligamento', val('horaDeslig')],
+    ['Horário do religamento', val('horaRelig')],
+    ['Ordem de Serviço PO', val('ordemServico')],
+    ['Técnico Subterrâneo Responsável', val('tecSubterraneo')],
+    ['Técnico COD Responsável', val('tecCod')],
+    ['Proteção atuada', val('protecao')],
+    ['Oscilografias solicitadas', val('oscilografias')],
+    ['OIE', val('oie')],
+  ].filter(([,value])=>value);
+}
+
+function getSituacaoReligamentoText(){
+  if(selectedMsgType !== 'religamentoParcial') return '';
+  const trechoReligado = val('trechoReligado');
+  const trechoDesligado = val('trechoDesligado');
+  if(!trechoReligado && !trechoDesligado) return '';
+  return `Religamento parcial — circuito reenergizado até ${trechoReligado || 'o ponto informado'}; trecho a jusante permanece desenergizado em ${trechoDesligado || 'ponto a definir'}, mantido isolado para prosseguimento dos trabalhos.`;
+}
+
+function buildReport(){
+  const lines = [];
+  lines.push(`*${typeLabels[selectedMsgType]}*`);
+  lines.push('');
+
+  getFieldsData().forEach(([label, value])=> lines.push(`*${label}:* ${value}`));
+
+  const situacaoReligamento = getSituacaoReligamentoText();
+  if(situacaoReligamento) lines.push(`*Situação do religamento:* ${situacaoReligamento}`);
+
+  const estrategia = val('estrategia');
+  if(estrategia){
+    lines.push('');
+    lines.push('*Estratégia de atendimento:*');
+    lines.push('');
+    lines.push(estrategia);
+  }
+
+  return lines.join('\n');
+}
+
+const isConfigured = APPS_SCRIPT_URL && APPS_SCRIPT_URL.indexOf('COLE_AQUI') === -1;
+
+async function saveHistory(text){
+  const record = {
+    tipo: selectedMsgType,
+    circuito: val('circuito') || '—',
+    createdAt: Date.now(),
+    text,
+    secret: SHARED_SECRET
+  };
+
+  if(!isConfigured){
+    showToast('Histórico compartilhado não configurado — veja o topo do arquivo.');
+    return;
+  }
+
+  try{
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita pre-flight CORS no Apps Script
+      body: JSON.stringify(record)
+    });
+    loadHistory();
+  }catch(err){
+    showToast('Relatório gerado, mas não foi possível salvar no histórico compartilhado.');
+  }
+}
+
+async function loadHistory(){
+  const list = document.getElementById('historyList');
+
+  if(!isConfigured){
+    list.innerHTML = '<div class="empty-hist">Histórico compartilhado não configurado. Veja as instruções no topo do arquivo (APPS_SCRIPT_URL).</div>';
+    return;
+  }
+
+  list.innerHTML = '<div class="loading-hist">Carregando histórico...</div>';
+  try{
+    const res = await fetch(APPS_SCRIPT_URL + '?secret=' + encodeURIComponent(SHARED_SECRET), { method: 'GET' });
+    const items = await res.json();
+    if(items && items.error) throw new Error(items.error);
+    renderHistory(Array.isArray(items) ? items.slice(0, 30) : []);
+  }catch(err){
+    list.innerHTML = '<div class="empty-hist">Não foi possível carregar o histórico compartilhado. <a href="#" id="retryHistory" style="color:var(--primary);">Tentar novamente</a></div>';
+    const retry = document.getElementById('retryHistory');
+    if(retry) retry.addEventListener('click', (e)=>{ e.preventDefault(); loadHistory(); });
+  }
+}
+
+function renderHistory(items){
+  const list = document.getElementById('historyList');
+  if(items.length === 0){
+    list.innerHTML = '<div class="empty-hist">Nenhum relatório gerado ainda.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  items.forEach(r=>{
+    const d = new Date(r.createdAt);
+    const time = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = `<div class="history-top"><span>${time}</span><span>${typeShort[r.tipo] || r.tipo}</span></div><div class="history-title">Circuito ${escapeHtml(r.circuito)}</div>`;
+    div.addEventListener('click', ()=>{
+      currentReportText = r.text;
+      document.getElementById('reportBox').textContent = r.text;
+      showToast('Relatório carregado do histórico.');
+    });
+    list.appendChild(div);
+  });
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str ?? '';
+  return d.innerHTML;
+}
+
+document.getElementById('generateBtn').addEventListener('click', ()=>{
+  const text = buildReport();
+  currentReportText = text;
+  document.getElementById('reportBox').textContent = text;
+  saveHistory(text);
+  showToast('Relatório gerado.');
+});
+
+document.getElementById('copyBtn').addEventListener('click', async ()=>{
+  if(!currentReportText){ showToast('Gere o relatório primeiro.'); return; }
+  try{
+    await navigator.clipboard.writeText(currentReportText);
+    showToast('Texto copiado.');
+  }catch(err){
+    showToast('Não foi possível copiar automaticamente. Selecione o texto manualmente.');
+  }
+});
+
+document.getElementById('shareBtn').addEventListener('click', ()=>{
+  if(!currentReportText){ showToast('Gere o relatório primeiro.'); return; }
+  const url = 'https://wa.me/?text=' + encodeURIComponent(currentReportText);
+  window.open(url, '_blank');
+});
+
+let currentImageDataUrl = '';
+
+function populateImageCard(){
+  document.getElementById('imgStageLabel').textContent = typeLabels[selectedMsgType];
+
+  const badgesEl = document.getElementById('imgBadges');
+  badgesEl.innerHTML = '';
+  const situacao = val('situacao');
+  if(situacao){
+    const b = document.createElement('span');
+    b.className = 'img-badge';
+    b.textContent = situacao;
+    badgesEl.appendChild(b);
+  }
+  const circuito = val('circuito');
+  if(circuito){
+    const b = document.createElement('span');
+    b.className = 'img-badge';
+    b.style.background = '#E7F0FA';
+    b.style.color = '#1F5C9E';
+    b.textContent = 'Circuito ' + circuito;
+    badgesEl.appendChild(b);
+  }
+
+  const rowsEl = document.getElementById('imgRows');
+  rowsEl.innerHTML = '';
+  getFieldsData().forEach(([label, value])=>{
+    const row = document.createElement('div');
+    row.className = 'img-row';
+    row.innerHTML = `<span class="lbl">${escapeHtml(label)}</span><span class="val">${escapeHtml(value)}</span>`;
+    rowsEl.appendChild(row);
+  });
+
+  const blocksEl = document.getElementById('imgBlocks');
+  blocksEl.innerHTML = '';
+  const situacaoReligamento = getSituacaoReligamentoText();
+  if(situacaoReligamento){
+    const blk = document.createElement('div');
+    blk.className = 'img-block';
+    blk.innerHTML = `<h4>Situação do religamento</h4>${escapeHtml(situacaoReligamento)}`;
+    blocksEl.appendChild(blk);
+  }
+  const estrategia = val('estrategia');
+  if(estrategia){
+    const blk = document.createElement('div');
+    blk.className = 'img-block';
+    blk.innerHTML = `<h4>Estratégia de atendimento</h4>${escapeHtml(estrategia)}`;
+    blocksEl.appendChild(blk);
+  }
+
+  const now = new Date();
+  document.getElementById('imgFooterTime').textContent =
+    'Gerado em ' + now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+
+document.getElementById('genImageBtn').addEventListener('click', async ()=>{
+  if(!val('circuito') && getFieldsData().length === 0){
+    showToast('Preencha ao menos um campo antes de gerar a imagem.');
+    return;
+  }
+  const btn = document.getElementById('genImageBtn');
+  btn.disabled = true;
+  btn.textContent = 'Gerando...';
+  try{
+    populateImageCard();
+    if(document.fonts && document.fonts.ready) await document.fonts.ready;
+    const card = document.getElementById('imageCard');
+    const canvas = await html2canvas(card, {backgroundColor:'#FFFFFF', scale:2});
+    currentImageDataUrl = canvas.toDataURL('image/png');
+    const preview = document.getElementById('imagePreview');
+    preview.innerHTML = '';
+    const img = document.createElement('img');
+    img.src = currentImageDataUrl;
+    preview.appendChild(img);
+    document.getElementById('imageActions').style.display = 'flex';
+    showToast('Imagem gerada.');
+  }catch(err){
+    showToast('Não foi possível gerar a imagem.');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Gerar imagem';
+  }
+});
+
+document.getElementById('downloadImgBtn').addEventListener('click', ()=>{
+  if(!currentImageDataUrl) return;
+  const a = document.createElement('a');
+  a.href = currentImageDataUrl;
+  a.download = 'desligamento-' + (val('circuito') || 'relatorio') + '.png';
+  a.click();
+});
+
+document.getElementById('shareImgBtn').addEventListener('click', async ()=>{
+  if(!currentImageDataUrl){ showToast('Gere a imagem primeiro.'); return; }
+
+  if(!(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write)){
+    showToast('Este navegador não permite copiar imagem automaticamente. Use "Baixar imagem".');
+    return;
+  }
+
+  try{
+    // Passa a imagem como Promise direto para o ClipboardItem (sem await antes),
+    // preservando o gesto de clique exigido por alguns navegadores.
+    const item = new ClipboardItem({
+      'image/png': fetch(currentImageDataUrl).then(r => r.blob())
+    });
+    await navigator.clipboard.write([item]);
+    showToast('Imagem copiada! Abra o WhatsApp e cole com Ctrl+V.');
+  }catch(err){
+    const detail = (err && err.message) ? err.message : 'motivo desconhecido';
+    showToast('Não copiou automaticamente (' + detail + '). Use "Baixar imagem".', 4500);
+  }
+});
+
+loadHistory();
+</script>
+</body>
+</html>
